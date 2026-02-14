@@ -419,3 +419,4 @@ If you use this system in your research, please cite:
 ## Acknowledgments
 
 This project addresses key challenges in digital forensics by combining traditional machine learning with deep learning approaches for robust file type classification in challenging scenarios.
+# File-Type-Identification
