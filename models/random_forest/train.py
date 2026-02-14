@@ -188,9 +188,9 @@ class RandomForestFileClassifier:
         print(f"📊 Feature importance plot saved to {save_path}")
     
     def save_model(self, filepath):
-        """Save trained model."""
+        """Save trained model (sklearn model only)."""
         with open(filepath, 'wb') as f:
-            pickle.dump(self, f)
+            pickle.dump(self.model, f)
         print(f"💾 Model saved to {filepath}")
     
     @staticmethod

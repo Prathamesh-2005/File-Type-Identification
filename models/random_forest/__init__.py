@@ -2,6 +2,7 @@
 Random Forest Model Package
 """
 
-from .train import FileTypeRandomForest, load_fragments
+from .train import RandomForestFileClassifier
 
-__all__ = ['FileTypeRandomForest', 'load_fragments']
+__all__ = ['RandomForestFileClassifier']
+
