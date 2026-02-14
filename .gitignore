@@ -1,0 +1,108 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+.venv311
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Data files
+*.npy
+*.npz
+*.hex
+*.bin
+data/raw/*
+!data/raw/.gitkeep
+data/fragments/*
+!data/fragments/.gitkeep
+data/train/*
+!data/train/.gitkeep
+data/test/*
+!data/test/.gitkeep
+data/validation/*
+!data/validation/.gitkeep
+
+# Old project structure
+BMP/bmp_dataset_split.npz
+BMP/*.npz
+BMP/test_bmp_images
+BMP/train_bmp_images
+BMP/fragments_with_header_footer
+BMP/fragments_headerless_footerless
+BMP/bike/
+BMP/bmp_fragments/
+BMP/bmp_headerless/
+CNN/Testing_dataset
+CNN/Training_dataset
+CNN/Testing_fragments
+CNN/Training_fragments
+Random_Forest/Testing_dataset
+Random_Forest/Training_dataset
+Random_Forest/Testing_fragments
+Random_Forest/Training_fragments
+
+# Model files
+*.h5
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.pb
+models/**/*.h5
+models/**/*.pkl
+
+# Logs
+*.log
+logs/
+
+# Plots and visualizations
+*.png
+*.jpg
+*.jpeg
+!README_images/*.png
+
+# CSV files (except configs)
+fragment_mapping.csv
+*.csv
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+temp/
