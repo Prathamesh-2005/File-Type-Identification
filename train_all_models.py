@@ -50,20 +50,13 @@ print("STEP 2: SPLITTING DATA")
 print("=" * 80)
 print()
 
-# First split: 80% train+val, 20% test
-X_train_val, X_test, y_train_val, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
+# Split: 70% train, 30% test
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=RANDOM_SEED, stratify=y
 )
 
-# Second split: 87.5% train, 12.5% val (of the 80%)
-# This gives us 70% train, 10% val, 20% test overall
-X_train, X_val, y_train, y_val = train_test_split(
-    X_train_val, y_train_val, test_size=0.125, random_state=RANDOM_SEED, stratify=y_train_val
-)
-
-print(f"Train set:      {len(X_train):,} samples ({len(X_train)/len(X)*100:.1f}%)")
-print(f"Validation set: {len(X_val):,} samples ({len(X_val)/len(X)*100:.1f}%)")
-print(f"Test set:       {len(X_test):,} samples ({len(X_test)/len(X)*100:.1f}%)")
+print(f"Train set: {len(X_train):,} samples ({len(X_train)/len(X)*100:.1f}%)")
+print(f"Test set:  {len(X_test):,} samples ({len(X_test)/len(X)*100:.1f}%)")
 print()
 
 # Save label encoder (shared across all models)
@@ -159,15 +152,15 @@ try:
     
     # Normalize for CNN
     X_train_cnn = X_train.astype(np.float32) / 255.0
-    X_val_cnn = X_val.astype(np.float32) / 255.0
     X_test_cnn = X_test.astype(np.float32) / 255.0
     
     cnn_classifier = CNNFileClassifier(
         input_shape=(X_train.shape[1], 1),
         num_classes=len(file_types)
     )
-    cnn_classifier.train(X_train_cnn, y_train, X_val_cnn, y_val, file_types, 
-                        epochs=50, batch_size=64)
+    # Use 20% of training data for validation
+    cnn_classifier.train(X_train_cnn, y_train, None, None, file_types, 
+                        epochs=50, batch_size=64, validation_split=0.2)
     
     # Evaluate
     cnn_results = cnn_classifier.evaluate(X_test_cnn, y_test, 
@@ -202,15 +195,15 @@ try:
     
     # Normalize for ResNet (reuse CNN normalization)
     X_train_resnet = X_train.astype(np.float32) / 255.0
-    X_val_resnet = X_val.astype(np.float32) / 255.0
     X_test_resnet = X_test.astype(np.float32) / 255.0
     
     resnet_classifier = ResNetFileClassifier(
         input_shape=(X_train.shape[1], 1),
         num_classes=len(file_types)
     )
-    resnet_classifier.train(X_train_resnet, y_train, X_val_resnet, y_val, file_types, 
-                           epochs=50, batch_size=64)
+    # Use 20% of training data for validation
+    resnet_classifier.train(X_train_resnet, y_train, None, None, file_types, 
+                           epochs=50, batch_size=64, validation_split=0.2)
     
     # Evaluate
     resnet_results = resnet_classifier.evaluate(X_test_resnet, y_test, 
@@ -269,7 +262,6 @@ if all_results:
         'num_classes': len(file_types),
         'file_types': file_types,
         'train_samples': len(X_train),
-        'val_samples': len(X_val),
         'test_samples': len(X_test),
         'models': all_results,
         'best_model': best_model[0],

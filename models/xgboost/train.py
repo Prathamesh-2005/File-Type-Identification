@@ -39,7 +39,9 @@ class XGBoostFileClassifier:
             'objective': 'multi:softmax',
             'eval_metric': 'mlogloss',
             'tree_method': 'gpu_hist' if use_gpu else 'hist',
-            'verbosity': 1
+            'verbosity': 1,
+            'subsample': 0.8,  # Use 80% of data per tree for memory efficiency
+            'colsample_bytree': 0.8  # Use 80% of features per tree
         }
         
         self.model = xgb.XGBClassifier(**params)
@@ -239,12 +241,38 @@ def main():
     print(f"Test set: {len(X_test):,} samples ({len(X_test)/len(X)*100:.1f}%)")
     print()
     
-    # Create and train model
+    # Ensure data stays as integer type (no float conversion for memory efficiency)
+    print(f"Data type: {X_train.dtype} (memory efficient)")
+    print(f"Memory usage: ~{X_train.nbytes / (1024**3):.2f} GB")
+    
+    # MEMORY FIX: Use subset of training data to fit in RAM
+    # XGBoost also needs memory, so we reduce samples if needed
+    max_samples = 200000  # Maximum samples that fit in most laptops
+    if len(X_train) > max_samples:
+        print(f"\n⚠️  Memory optimization: Using {max_samples:,} samples (random subset)")
+        print(f"   Original: {len(X_train):,} samples")
+        
+        # Stratified sampling to maintain class distribution
+        from sklearn.model_selection import train_test_split
+        X_train_subset, _, y_train_subset, _ = train_test_split(
+            X_train, y_train, 
+            train_size=max_samples, 
+            random_state=RANDOM_SEED, 
+            stratify=y_train
+        )
+        X_train = X_train_subset
+        y_train = y_train_subset
+        
+        print(f"   Subset:   {len(X_train):,} samples")
+        print(f"   This will fit in ~3 GB RAM (instead of 6.69 GB)")
+    print()
+    
+    # Create and train model with memory-efficient parameters
     xgb_classifier = XGBoostFileClassifier(
-        n_estimators=100, 
-        max_depth=6,
+        n_estimators=50,    # Reduced from 100 to save memory
+        max_depth=5,        # Reduced depth for memory efficiency
         learning_rate=0.1,
-        use_gpu=False  # Set to True if you have GPU
+        use_gpu=False       # Set to True if you have GPU
     )
     xgb_classifier.train(X_train, y_train, file_types)
     

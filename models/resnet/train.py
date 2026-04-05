@@ -126,13 +126,16 @@ class ResNetFileClassifier:
         return model
     
     def train(self, X_train, y_train, X_val, y_val, file_types, 
-              epochs=50, batch_size=32):
+              epochs=50, batch_size=32, validation_split=0.2):
         """Train the model."""
         print("\n" + "="*80)
         print("TRAINING RESNET MODEL")
         print("="*80)
         print(f"Training samples: {len(X_train):,}")
-        print(f"Validation samples: {len(X_val):,}")
+        if X_val is not None:
+            print(f"Validation samples: {len(X_val):,}")
+        else:
+            print(f"Validation split: {validation_split*100:.0f}%")
         print(f"Input shape: {self.input_shape}")
         print(f"Number of classes: {self.num_classes}")
         print()
@@ -157,12 +160,21 @@ class ResNetFileClassifier:
         
         # Reshape for 1D CNN (samples, timesteps, channels)
         X_train = X_train.reshape(-1, X_train.shape[1], 1)
-        X_val = X_val.reshape(-1, X_val.shape[1], 1)
+        
+        # Prepare validation data
+        if X_val is not None:
+            X_val = X_val.reshape(-1, X_val.shape[1], 1)
+            validation_data = (X_val, y_val)
+            validation_split_arg = None
+        else:
+            validation_data = None
+            validation_split_arg = validation_split
         
         # Train
         self.history = self.model.fit(
             X_train, y_train,
-            validation_data=(X_val, y_val),
+            validation_data=validation_data,
+            validation_split=validation_split_arg if validation_split_arg else 0.0,
             epochs=epochs,
             batch_size=batch_size,
             callbacks=callbacks,
@@ -343,18 +355,17 @@ def main():
         verbose=True
     )
     
-    # Split into train, validation, and test
-    print("Splitting data (70% train, 15% val, 15% test)...")
-    X_train, X_temp, y_train, y_temp = train_test_split(
+    # Split into train and test (70-30)
+    print("Splitting data (70% train, 30% test)...")
+    X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.3, random_state=RANDOM_SEED, stratify=y
     )
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.5, random_state=RANDOM_SEED, stratify=y_temp
-    )
     
-    print(f"Train set: {len(X_train):,} samples")
-    print(f"Validation set: {len(X_val):,} samples")
-    print(f"Test set: {len(X_test):,} samples")
+    print(f"Train set: {len(X_train):,} samples ({len(X_train)/len(X)*100:.1f}%)")
+    print(f"Test set: {len(X_test):,} samples ({len(X_test)/len(X)*100:.1f}%)")
+    print("(20% of training data will be used for validation during training)")
+    print(f"Data type: {X_train.dtype}")
+    print(f"Memory usage: ~{X_train.nbytes / (1024**3):.2f} GB")
     print()
     
     # Create and train model
@@ -362,8 +373,14 @@ def main():
         input_shape=(X_train.shape[1], 1),
         num_classes=len(file_types)
     )
-    resnet_classifier.train(X_train, y_train, X_val, y_val, file_types, 
-                           epochs=50, batch_size=64)
+    
+    # Use smaller batch size for memory efficiency with large datasets
+    batch_size = 32 if len(X_train) > 300000 else 64
+    print(f"Using batch_size={batch_size} for memory efficiency\n")
+    
+    # Use validation_split for internal validation
+    resnet_classifier.train(X_train, y_train, None, None, file_types, 
+                           epochs=50, batch_size=batch_size, validation_split=0.2)
     
     # Evaluate
     results = resnet_classifier.evaluate(X_test, y_test, 

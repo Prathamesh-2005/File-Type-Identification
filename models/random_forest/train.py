@@ -33,9 +33,11 @@ class RandomForestFileClassifier:
         self.model = RandomForestClassifier(
             n_estimators=n_estimators,
             max_depth=max_depth,
+            max_samples=0.7,  # Use 70% of data per tree to reduce memory
             random_state=random_state,
             n_jobs=-1,
-            verbose=1
+            verbose=1,
+            max_features='sqrt'  # Reduce features per split for memory efficiency
         )
         self.file_types = None
         self.training_time = None
@@ -219,16 +221,44 @@ def main():
     )
     
     # Split into train and test
-    print("Splitting data (80% train, 20% test)...")
+    print("Splitting data (70% train, 30% test)...")
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
+        X, y, test_size=0.3, random_state=RANDOM_SEED, stratify=y
     )
-    print(f"Train set: {len(X_train):,} samples")
-    print(f"Test set: {len(X_test):,} samples")
+    print(f"Train set: {len(X_train):,} samples ({len(X_train)/len(X)*100:.1f}%)")
+    print(f"Test set: {len(X_test):,} samples ({len(X_test)/len(X)*100:.1f}%)")
     print()
     
-    # Create and train model
-    rf_classifier = RandomForestFileClassifier(n_estimators=100, max_depth=20)
+    # Ensure data stays as integer type (no float conversion for memory efficiency)
+    print(f"Data type: {X_train.dtype} (memory efficient)")
+    print(f"Memory usage: ~{X_train.nbytes / (1024**3):.2f} GB")
+    
+    # MEMORY FIX: Use subset of training data to fit in RAM
+    # sklearn converts to float32 internally, so we need to reduce samples
+    max_samples = 200000  # Maximum samples that fit in most laptops
+    if len(X_train) > max_samples:
+        print(f"\n⚠️  Memory optimization: Using {max_samples:,} samples (random subset)")
+        print(f"   Original: {len(X_train):,} samples")
+        
+        # Stratified sampling to maintain class distribution
+        from sklearn.model_selection import train_test_split
+        X_train_subset, _, y_train_subset, _ = train_test_split(
+            X_train, y_train, 
+            train_size=max_samples, 
+            random_state=RANDOM_SEED, 
+            stratify=y_train
+        )
+        X_train = X_train_subset
+        y_train = y_train_subset
+        
+        print(f"   Subset:   {len(X_train):,} samples")
+        print(f"   This will fit in ~3 GB RAM (instead of 6.69 GB)")
+    print()
+    
+    rf_classifier = RandomForestFileClassifier(
+        n_estimators=50,   # Reduced from 100 to save memory
+        max_depth=15       # Limited depth to reduce memory usage
+    )
     rf_classifier.train(X_train, y_train, file_types)
     
     # Evaluate

@@ -12,29 +12,53 @@ Design and development of an intelligent file type classification system for fra
 
 ## 🚀 Quick Start
 
-### Train All Models
+### Train Models Individually (Recommended for Limited Resources)
+
+Train models one at a time to avoid memory issues:
+
+```bash
+# 1. Random Forest (10-30 min)
+python models/random_forest/train.py
+
+# 2. XGBoost (15-40 min)
+python models/xgboost/train.py
+
+# 3. CNN (1-2 hours)
+python models/cnn/train.py
+
+# 4. ResNet (2-3 hours)
+python models/resnet/train.py
+```
+
+**Note:** Each model uses **70% training / 30% testing** split. CNN and ResNet use 20% of training data for internal validation.
+
+### Train All Models at Once (Requires More Resources)
 
 ```bash
 python train_all_models.py
 ```
 
-### Train Individual Models
+### Predict File Types
 
 ```bash
-# Random Forest
-python models/random_forest/train.py
+# Predict with a single model
+python predict.py predict_input/ --model rf
+python predict.py predict_input/ --model xgboost
+python predict.py predict_input/ --model cnn
+python predict.py predict_input/ --model resnet
 
-# XGBoost
-python models/xgboost/train.py
-
-# CNN
-python models/cnn/train.py
-
-# ResNet
-python models/resnet/train.py
+# Run all models and compare
+python predict.py predict_input/ --model all --save-report --comparison
 ```
 
-### Compare Results
+### Generate Reports
+
+```bash
+# Generate comprehensive reports after predictions
+python generate_report.py
+```
+
+### Compare Training Results
 
 ```bash
 python compare_models.py
@@ -85,6 +109,8 @@ file-type-identification/
 ├── config.py                       # Global configuration
 ├── train_all_models.py             # Master training script
 ├── compare_models.py               # Model comparison tool
+├── predict.py                      # Batch prediction script
+├── generate_report.py              # Report generator
 ├── analyze_fragments.py            # Data analysis utility
 ├── Train/                          # Training data (315k fragments)
 │   ├── 7zipFragments/
@@ -113,6 +139,16 @@ file-type-identification/
 │   ├── xgboost/
 │   ├── cnn/
 │   ├── resnet/
+│   ├── predictions/                # Prediction results
+│   │   ├── rf_predictions.json
+│   │   ├── xgboost_predictions.json
+│   │   ├── cnn_predictions.json
+│   │   ├── resnet_predictions.json
+│   │   ├── summary_report.txt
+│   │   ├── detailed_report.txt
+│   │   ├── file_type_report.txt
+│   │   ├── comparison_report.txt
+│   │   └── *.png                  # Comparison charts
 │   ├── comparisons/                # Model comparison charts
 │   ├── all_models_comparison.json
 │   └── label_encoder.pkl
@@ -236,7 +272,63 @@ Each training script will:
 - Generate visualizations (confusion matrices, training curves)
 - Save the trained model
 
-### 5. Analyze Files
+### 5. Predict File Types (Batch Prediction)
+
+After training models, predict file types for a batch of files:
+
+```bash
+# Single model prediction
+python predict.py predict_input/ --model rf
+python predict.py predict_input/ --model xgboost
+python predict.py predict_input/ --model cnn
+python predict.py predict_input/ --model resnet
+
+# Run all models and generate comparison reports
+python predict.py predict_input/ --model all --save-report --comparison
+```
+
+**Output Format:**
+
+```
+📁 Loaded 17 fragment(s) from: predict_input/
+
+======================================================================
+🤖 ResNet Predictions
+======================================================================
+File                                     Prediction   Confidence
+---------------------------------------- ------------ ----------
+7zip.bin                                 .7zip        95.3%
+apk.bin                                  .apk         100.0%
+bin.bin                                  .bin         89.5%
+css.bin                                  .css         82.8%
+...
+```
+
+**Options:**
+
+- `--model`: Model to use (rf, xgboost, cnn, resnet, or all)
+- `--save-report`: Save predictions to JSON and CSV files
+- `--comparison`: Generate comparison reports across all models
+
+### 6. Generate Comprehensive Reports
+
+After running predictions with all models, generate detailed reports:
+
+```bash
+python generate_report.py
+```
+
+This generates:
+
+- **Summary Report** (`summary_report.txt`): Overall accuracy for all models and per file type
+- **Detailed Report** (`detailed_report.txt`): File-by-file predictions with status
+- **Comparison Chart** (`model_comparison.png`): Bar chart comparing model accuracies
+- **Per-File-Type Chart** (`per_filetype_comparison.png`): Grouped bar charts for each file type
+- **Confusion Matrices** (`*_confusion_matrix.png`): Heat maps showing prediction patterns
+
+All reports are saved to `results/predictions/`
+
+### 7. Analyze Files
 
 Analyze a file for header/footer presence:
 
@@ -419,4 +511,5 @@ If you use this system in your research, please cite:
 ## Acknowledgments
 
 This project addresses key challenges in digital forensics by combining traditional machine learning with deep learning approaches for robust file type classification in challenging scenarios.
+
 # File-Type-Identification
