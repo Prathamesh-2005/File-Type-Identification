@@ -987,4 +987,4 @@ Final Results:
 
 
 if __name__ == "__main__":
-    main(file_types=["html", "pdf"], frags_per_type=5)
+    main(file_types=["html", "pdf","apk"], frags_per_type=10)
